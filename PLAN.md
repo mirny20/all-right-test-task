@@ -7,7 +7,7 @@
   - [x] 1.2 Scaffold: Playwright + TS (projects `setup`/`api`/`ui`), strict tsconfig, ESLint + Prettier, `.env.example`, `.gitignore`, npm scripts, folder structure, one smoke test per project
 - [ ] **Phase 2 — API tests (restful-booker)**
   - [x] 2.1 Explore the live API with curl → table of real status codes/bodies, list bug candidates
-  - [ ] 2.2 `src/api/types.ts`, `BookingClient`, booking data factory, `api` fixture
+  - [x] 2.2 `src/api/types.ts`, `BookingClient`, booking data factory, `api` fixture
   - [ ] 2.3 `tests/api/booking.spec.ts`: E2E flow (auth → create → update → delete → GET returns 404) with `test.step`; negatives: bad credentials, update without token, GET missing id, (invalid payload)
 - [ ] **Phase 3 — UI tests (saucedemo, standard_user)**
   - [ ] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
@@ -18,7 +18,14 @@
 
 ## Next step
 
-Phase 2.2: `src/api/types.ts` (Booking, BookingDates, CreateBookingResponse, AuthResponse, BookingIdItem), `BookingClient` (wraps `APIRequestContext`, returns `APIResponse` so specs assert status + body), a booking data factory with a unique timestamped `firstname`, and an `api` fixture exposing `bookingClient` and a `token`. Base all codes and shapes on the "API findings (2.1)" table below. The only test change is migrating `tests/api/smoke.spec.ts` to the fixture, if that fits.
+Phase 2.3: `tests/api/booking.spec.ts`. One E2E test with `test.step` per stage: auth → create (200, body echoes payload) → GET (200) → PUT (200, updated body) → DELETE (201, `Created`) → GET (404, `Not Found`). Uses the `token` fixture and creates its own booking. Negatives:
+
+- PUT without a token, using `createdBooking` (403 `Forbidden`)
+- GET with a missing id (404)
+- bad credentials (BUG-01, `test.fail()`)
+- missing required field (BUG-02, `test.fail()`)
+
+Optional: BUG-03/04/05 as `test.fail()` cases. Tags: `@api`, `@negative`.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -59,6 +66,8 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: API create=200 and delete=201 match the apidoc, so the tests assert them as documented. They are REST-convention oddities, not bugs, and will be noted in the README.
 - 2026-11-25: `BookingClient` must not parse error bodies as JSON (they are `text/plain`). Assert `response.text()` for error cases.
 - 2026-11-25: ESLint 10 flat config: `typescript-eslint` strictTypeChecked + `eslint-plugin-playwright` (tests only) + `eslint-config-prettier`.
+- 2026-11-25: `BookingClient` returns raw `APIResponse` and never parses bodies; specs assert status + body. `*Raw(body: unknown)` methods exist for invalid-payload cases. The token is an optional arg sent as `Cookie: token=…`.
+- 2026-11-25: The `api` fixture provides `bookingClient`, `token` (asserts 200 + token, throws on `{reason}`) and `createdBooking`. `createdBooking` is auto-deleted at teardown, and teardown accepts 201 or 405 (already deleted by the test, BUG-05). Verified with a throwaway spec (round-trip + already-deleted teardown), then removed.
 
 ## Bugs found (candidates → confirmed)
 
