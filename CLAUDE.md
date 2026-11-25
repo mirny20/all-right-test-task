@@ -15,6 +15,7 @@
 - **TASK.md is the assignment verbatim and must never be edited** (it is in `.prettierignore`). CLAUDE.md may be edited when a new rule is needed.
 - Before proposing a commit, review `git status` / `git diff --stat`. Any changed file outside the step's scope must be explained or reverted.
 - Anything that should go into the current commit (e.g. a proposed edit to CLAUDE.md) must be listed BEFORE the commit/push actions, never after them.
+- No AI attribution in commit messages: never add `Co-Authored-By: Claude …` (or similar) trailers, in commits you run or messages you propose.
 
 ## Mistake logging (for AI_WORKLOG.md) — MANDATORY
 

@@ -12,13 +12,13 @@
 - [x] **Phase 3 — UI tests (saucedemo, standard_user)**
   - [x] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
   - [x] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
-- [ ] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact. Workflow written and verified locally; waiting for the first green run on GitHub.
+- [x] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact. First run green (run 45666319745: 23 passed, artifact `playwright-report-1` downloaded and checked).
 - [ ] **Phase 5 — Docs**: README (run, coverage, left out, bug reports), curate AI_WORKLOG.md
 - [ ] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples
 
 ## Next step
 
-Confirm the first GitHub Actions run is green and the `playwright-report-1` artifact is downloadable, then tick Phase 4. After that, Phase 5: README (run, coverage, left out, bug reports, CI secrets setup) and curate AI_WORKLOG.md. Propose the README outline first.
+Phase 5: README (how to run incl. `.env` + CI secrets/variables setup, coverage, what was left out, bug reports BUG-01…08 as steps / expected / actual) and curate AI_WORKLOG.md (agent setup, key prompts, 3–5 mistakes from the raw log). Propose the README outline first.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -87,6 +87,7 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 
 - 2026-11-25: Phase 4: credentials have no hardcoded fallbacks (the user rejected the "defaults in code" approach). `src/config/env.ts` `requireEnv` fails fast when a variable is missing. `.env.example` is only a template for `.env`, and holds no passwords (blank values). The user caught a first version that still had the real passwords. In CI, passwords are GitHub Secrets and usernames are GitHub Variables, passed to the test step only. The CLAUDE.md "Secrets & config" rule was updated to match.
 - 2026-11-25: Workflow `.github/workflows/playwright.yml` runs on push (all branches), PRs to `main` and manual dispatch. Concurrency cancels older runs. Steps: Node `lts/*` → `npm ci` → install Chromium → typecheck, lint, format:check → tests. `playwright-report/` + `test-results/` are uploaded with `if: !cancelled()` and kept 14 days. JUnit/job summary was left out because TASK.md only asks for an uploaded report. Local `CI=1` run: 23 passed.
+- 2026-11-25: CI actions bumped from v4 to v7 (`checkout`, `setup-node`, `upload-artifact`) to clear the deprecated-Node-20 warning. Release notes v5–v7 were checked, and no breaking change affects this workflow.
 
 ## Bugs found (candidates → confirmed)
 
