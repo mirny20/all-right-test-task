@@ -9,6 +9,9 @@
 - Never claim a test passes without running it and showing the summary line.
 - Never invent selectors, endpoints, status codes, or response shapes. Verify against the live site/API (Playwright MCP, codegen, or curl) or ask.
 - Do not weaken an assertion to make a test pass. If the app misbehaves, it is a potential BUG: report it, do not "fix" the test.
+- End every step with a "YOUR TURN" section: numbered manual actions in order
+  (what to verify, exact git commands, when to /clear, and the exact prompt for the next step).
+- Anything that should go into the current commit (e.g. a proposed edit to CLAUDE.md) must be listed BEFORE the commit/push actions, never after them.
 
 ## Mistake logging (for AI_WORKLOG.md) — MANDATORY
 Whenever (a) the user corrects you, (b) a test run reveals your code was wrong, or (c) you discover you hallucinated a selector/API detail,
