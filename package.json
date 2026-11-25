@@ -1,0 +1,39 @@
+{
+  "name": "all-right-test-task",
+  "version": "1.0.0",
+  "description": "QA automation assignment: Playwright + TypeScript UI (saucedemo) and API (restful-booker) tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --project=ui",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mirny20/all-right-test-task.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mirny20/all-right-test-task/issues"
+  },
+  "homepage": "https://github.com/mirny20/all-right-test-task#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.10",
+    "dotenv": "^18.0.10",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.12.2",
+    "prettier": "^3.10.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.74.0"
+  }
+}
