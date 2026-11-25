@@ -67,3 +67,17 @@ _To be curated in Phase 5 from the Raw log below._
 - How it was caught: lint (`playwright/expect-expect` warning).
 - Fix: the setup asserts explicitly with `expect(inventoryPage.title).toHaveText('Products')`.
 - Prevention rule: Specs and setups must have a visible `expect`. `waitForLoaded()` is for readiness inside flows, not a substitute for the test's assertion.
+
+### 2026-11-25 — Phase 4 proposal: credentials via hardcoded fallbacks, and an unrequested JUnit reporter
+
+- What I did wrong: (1) Proposed running CI with no secrets because "the `.env.example` defaults are used". That was inaccurate, since the defaults are hardcoded fallbacks in `src/config/env.ts` and not read from `.env.example`. It was also the wrong approach: credentials in source code, plus a silent fallback that hides missing config. (2) Offered an optional JUnit reporter that TASK.md does not ask for (it only asks for "test report uploaded as an artifact").
+- How it was caught: user review of the step proposal.
+- Fix: credentials come only from the environment (local `.env` / GitHub Secrets + Variables). `env.ts` fails fast when a variable is missing. The JUnit reporter was dropped.
+- Prevention rule: Before describing how config is loaded, read the loader code. Never hardcode credentials as fallbacks, even public demo ones. Map every proposed item to a TASK.md line, and leave out anything that isn't one.
+
+### 2026-11-25 — Left real passwords in the committed `.env.example` (and in PLAN.md)
+
+- What I did wrong: After removing the hardcoded fallbacks from `env.ts`, I kept the real passwords in `.env.example`. That file is committed, so the credentials were still in the repo, just in a different file. PLAN.md's API findings table also had the booker password.
+- How it was caught: user review.
+- Fix: `.env.example` now has blank password values (and a blank BOOKER_USERNAME); only non-secret usernames stay. I removed the password from PLAN.md. The `gh secret set` instructions prompt for the value instead of passing it on the command line (keeps it out of shell history).
+- Prevention rule: Before proposing a commit, run `git grep` for every credential value. Templates (`.env.example`) hold names and placeholders, never real secret values.

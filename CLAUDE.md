@@ -96,4 +96,5 @@ bonus/        Test-case → Playwright test generator + examples
 
 ## Secrets & config
 
-- Credentials come from env vars with documented defaults (saucedemo creds are public; restful-booker admin/password123 is public). `.env` is gitignored; `.env.example` committed.
+- Credentials come only from env vars, with **no hardcoded fallbacks** in code (even public demo creds). `src/config/env.ts` fails fast on a missing var.
+- Locally: `.env` (gitignored), copied from the committed `.env.example` template. CI: passwords are GitHub **Secrets**, usernames are GitHub **Variables** (not secret, so logs stay readable).
