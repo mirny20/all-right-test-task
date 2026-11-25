@@ -13,14 +13,14 @@
   - [x] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
   - [x] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
 - [x] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact. First run green (run 45666319745: 23 passed, artifact `playwright-report-1` downloaded and checked).
-- [ ] **Phase 5 — Docs**
+- [x] **Phase 5 — Docs**
   - [x] 5.0 Trim the suite to the TASK.md numbers: 12 tests (UI 5 core + 3 negative, API 1 flow + 3 negative). Smoke specs removed.
-  - [ ] 5.1 README (run, coverage, left out, bug reports) and curate AI_WORKLOG.md
+  - [x] 5.1 README (run, coverage, left out, bug reports) and curate AI_WORKLOG.md
 - [ ] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples
 
 ## Next step
 
-Phase 5.1: README (how to run incl. `.env` + CI secrets/variables setup, coverage, what was left out, bug reports BUG-01…08 as steps / expected / actual, each marked automated or manual repro) and curate AI_WORKLOG.md (agent setup, key prompts, 3–5 mistakes from the raw log). The README outline was proposed in the 5.0 session; re-confirm it and settle the key prompts and the 5 curated mistakes before writing.
+Phase 6 (Bonus): decide headless `claude -p` vs an `@anthropic-ai/sdk` script (see Open questions), then build the text test case → Playwright spec generator in `bonus/`, with 2–3 documented examples (input, generated output, pass/fail, manual fixes). Propose the approach first.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -92,6 +92,8 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: CI actions bumped from v4 to v7 (`checkout`, `setup-node`, `upload-artifact`) to clear the deprecated-Node-20 warning. Release notes v5–v7 were checked, and no breaking change affects this workflow.
 
 - 2026-11-25: Phase 5.0: the suite had 20 tests + 2 smoke specs against the TASK.md brief of 10–14 (UI 5–7 core + 2–3 negative, API 1 flow + 2–3 negative). The overshoot came from the plan (4 negatives per area) and from one `test.fail()` pin per bug. The user chose to trim it to 12: UI = login, product list, sorting, cart, full checkout + wrong password, required checkout fields, BUG-06; API = E2E flow + update without token (403), BUG-01, BUG-02. Removed: `locked_out_user`, the no-session redirect, GET missing id (the E2E already asserts 404 after delete), BUG-03/04/05/07/08 pins, and both smoke specs. This reverses the earlier "smoke specs stay" decision. The removed bugs are still documented in the README with manual repro steps, and their code is in git history (`5582d50`, `924189e`). The removed code's now-unused helpers were deleted: `SAUCE_LOCKED_USERNAME` (env, `.env.example`, CI), `BurgerMenuComponent`, `BookingClient.ping`, unused users and messages. `createdBooking` teardown now requires 201 (only the BUG-05 test deleted the booking itself). Full suite: 13 passed (12 + setup), and the JSON reporter confirmed BUG-01/02/06 fail on their own assertions.
+
+- 2026-11-25: Phase 5.1: README written (run, `.env` + CI secrets/variables, structure, coverage tables, documented API oddities, left out, BUG-01…08 as bug reports with severity and an automated/manual status). Before writing, all 8 bugs were re-checked live: API with curl (BUG-01…05), UI with a throwaway Playwright script (BUG-06…08). AI_WORKLOG.md curated: agent setup, key prompts (the kick-off and step prompts verbatim, review prompts marked as paraphrased, because no transcript was kept), and 5 mistakes. The user decided the curated mistakes must be ones the user caught (TASK.md: "how you caught them"), so tool-caught entries stay only in the raw log. Full suite: 13 passed.
 
 ## Bugs found (candidates → confirmed)
 

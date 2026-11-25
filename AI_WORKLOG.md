@@ -1,23 +1,92 @@
 # AI Worklog
 
-> Curated in Phase 5. Until then, entries are appended to **Raw log** as they happen (see the CLAUDE.md "Mistake logging" rule).
+How this repo was built with an AI agent: the setup, the key prompts, and the mistakes the agent made that I caught. The full, unedited list of agent mistakes is in the [Raw log](#raw-log) at the end.
 
 ## Agent setup
 
-- Agent: Claude Code (VS Code extension)
-- Instructions: [CLAUDE.md](CLAUDE.md), which imports [TASK.md](TASK.md) (the assignment, verbatim) and [PLAN.md](PLAN.md) (living plan/status)
+- **Agent:** Claude Code (VS Code extension), plus the **Playwright MCP** server for exploring saucedemo in a real browser. `curl` was used to explore restful-booker.
+- **Instructions:** [CLAUDE.md](CLAUDE.md), loaded automatically in every session. It imports two other files:
+  - [TASK.md](TASK.md): the assignment, verbatim and never edited (also excluded from Prettier).
+  - [PLAN.md](PLAN.md): the living plan, with phase status, a "Next step", verified API/UI findings, a decisions log and the bug list. This kept context between sessions, so `/clear` could be used freely between steps.
+- **What CLAUDE.md enforces:**
+  - **Working agreement:** one PLAN.md step at a time. The agent states the approach in ≤10 lines and waits for approval. It runs the tests and shows the summary line before calling anything done, then updates PLAN.md and proposes a commit (no AI attribution trailers). Every step ends with a "YOUR TURN" checklist in execution order. The agent never invents selectors, endpoints or status codes; everything is verified against the live site/API first. It never weakens an assertion to make a test pass: app misbehaviour is a bug, pinned with `test.fail()`.
+  - **Code rules:** TypeScript strictness (no `any`), Page Object rules (intent-level methods, no assertions, injected via fixtures), selector priority (`data-test` → role → text, never XPath), test design (web-first assertions, no sleeps, `test.step`, tags) and API rules (status + body on every call, unique data, cleanup).
+  - **Secrets:** credentials only from env vars, with no fallbacks in code.
+  - **Mistake logging:** whenever I correct the agent, or a test, lint or `tsc` shows it was wrong, it appends an entry to the raw log below before continuing.
+- **Workflow per step:** `/clear` → "continue from Next step" → the agent proposes an approach → I review it and correct it or approve → the agent implements and runs the tests → I review the diff, the report and `git status` → commit.
 
 ## Key prompts
 
-_To be curated in Phase 5._
+Only prompts 1 and 2 are verbatim. I did not keep a transcript of the others, so they are paraphrased from the raw log entries they produced.
 
-## Mistakes & how they were caught (curated, 3–5)
+**1. Kick-off (verbatim; the assignment text, identical to [TASK.md](TASK.md), is omitted).** This produced the CLAUDE.md template, the tooling recommendation (`@playwright/test` + Playwright MCP) and the phased plan that became PLAN.md.
 
-_To be curated in Phase 5 from the Raw log below._
+> I am starting a QA automation test assignment using Playwright + TypeScript. Before we write any code, act as a Senior QA Automation Architect and create a detailed, step-by-step execution plan.
+>
+> Here is the full task description:
+> --- _[TASK.md]_ ---
+>
+> Please provide:
+>
+> 1. Context & File Strategy: Explain how I should structure TASK.md, CLAUDE.md, and PLAN.md in the repo so you never lose context across sessions, and give me the exact initial content for CLAUDE.md (including POM architecture, TypeScript strictness, selector best practices, and a rule reminding you to log mistakes/corrections for `AI_WORKLOG.md`).
+> 2. Tooling & Configuration Recommendations: Before generating the plan, recommend the optimal setup for this specific stack (Playwright + TypeScript + Restful-Booker API): should I use standard @playwright/test via Playwright CLI, or integrate any additional tools/MCP servers?
+> 3. Step-by-Step Execution Plan: Break the work down into logical phases (Setup → API Tests → UI Tests → CI → Documentation & Worklog → Optional Bonus). For each step, tell me:
+>    - What I should do manually vs. what prompt I should give you.
+>    - How to verify the step before moving on.
+> 4. Context Management Tips: Tell me when to clear/compact context (`/clear` or `/compact`) during this workflow so your output quality doesn't degrade.
+>
+> Do not generate the project files yet—just give me the plan and the CLAUDE.md template so we can review and start Step 1.
+
+**2. Step kick-off, used after every `/clear` (verbatim).** Because of the PLAN.md "Next step" section, this one line was enough to resume work.
+
+> Read PLAN.md and continue from 'Next step'
+
+**3. Review prompts (paraphrased).** Most of the value came from reviewing proposals before any code was written:
+
+- _"How many tests does TASK.md ask for, and how many are written?"_ This led to trimming the suite from 20 tests + 2 smoke specs to the brief's 12.
+- _"Don't put credentials in code as defaults, not even the public demo ones. And the passwords are still in `.env.example`."_ This led to env-only credentials, a fail-fast `env.ts`, and GitHub Secrets/Variables in CI.
+- _"You proposed the CLAUDE.md change after the commit and push steps, so I've already pushed."_ This led to the rule that every step ends with a "YOUR TURN" checklist in execution order.
+- _"The task means mistakes that I caught, not ones your tools caught."_ This changed how the list below was chosen.
+
+## Mistakes the agent made, and how I caught them
+
+These are the five mistakes I caught myself, in a plan review, a proposal review or a manual check. Mistakes the agent's own tooling caught (lint, `tsc`, `git status`, odd script output) are only in the raw log.
+
+### 1. The plan could not pass its own first verification step
+
+- **Mistake:** The execution plan created PLAN.md in step 1.2. But CLAUDE.md imports `@PLAN.md`, and the step 1.1 check ("a new session can answer 'what is Phase 2?'") needs PLAN.md to exist already.
+- **How I caught it:** Manual check. I ran the check, and a new session answered that no phases were defined.
+- **Fix:** PLAN.md and the AI_WORKLOG.md skeleton moved into step 1.1.
+
+### 2. A "commit this too" proposal came after the commit and push steps
+
+- **Mistake:** The manual checklist said to commit (step 3) and push (step 4), and only then proposed a CLAUDE.md change "for the same commit".
+- **How I caught it:** I followed the checklist literally and had already pushed when I reached the proposal.
+- **Fix:** A follow-up commit, plus two CLAUDE.md rules. Every step ends with a "YOUR TURN" checklist in execution order, and anything that belongs in a commit is listed before the commit/push actions.
+
+### 3. Credentials hardcoded as fallbacks, and a wrong description of how config loads
+
+- **Mistake:** For CI, the agent proposed running with no secrets because "the `.env.example` defaults are used". That was wrong: the defaults were hardcoded fallbacks in `src/config/env.ts`, and `.env.example` is never read at runtime. It was also the wrong design: credentials in source, plus a silent fallback that hides missing config. The same proposal also added a JUnit reporter that the brief does not ask for.
+- **How I caught it:** Review of the step proposal.
+- **Fix:** Credentials come only from the environment (local `.env`, or GitHub Secrets + Variables in CI). `env.ts` fails fast when a variable is missing. The JUnit reporter was dropped. The rule was added to CLAUDE.md "Secrets & config".
+
+### 4. Real passwords left in the committed `.env.example` and PLAN.md
+
+- **Mistake:** After removing the fallbacks from code, the agent kept the real passwords in `.env.example`, which is committed. So the credentials were still in the repo, just in a different file. PLAN.md's API findings also had the booker password.
+- **How I caught it:** Review of the diff.
+- **Fix:** `.env.example` now holds only variable names and non-secret usernames, with blank passwords, and the password was removed from PLAN.md. The `gh secret set` instructions prompt for the value instead of taking it on the command line, which keeps it out of shell history.
+
+### 5. Twice as many tests as the brief asks for, without flagging it
+
+- **Mistake:** TASK.md asks for 5–7 UI core tests + 2–3 UI negatives, and 1 API flow + 2–3 API negatives. The plan already had 4 negatives per area. Then every confirmed bug got its own `test.fail()` pin, so the suite reached 20 tests (14 negative) + 2 smoke specs. The overshoot was never raised as a decision.
+- **How I caught it:** Review. I compared the suite against the TASK.md numbers.
+- **Fix:** Trimmed to 12 tests (UI 5 + 3, API 1 + 3). Only the three most critical bugs keep automated pins. The other five are bug reports with manual repro steps in the README.
 
 ---
 
 ## Raw log
+
+Every mistake, logged as it happened (CLAUDE.md "Mistake logging" rule). Unedited apart from formatting.
 
 ### 2026-11-25 — Phase 2.3 specs failed lint (unused destructured var, conditional in test)
 
@@ -88,3 +157,10 @@ _To be curated in Phase 5 from the Raw log below._
 - How it was caught: user review ("how many tests does TASK.md ask for, and how many are written?").
 - Fix: trimmed to 12 tests (UI 5 core + 3 negative, API 1 flow + 3 negative). Only the most critical bugs keep automated pins (BUG-01, BUG-02, BUG-06). BUG-03/04/05/07/08 are documented in the README as bug reports with manual repro steps. The smoke specs were removed.
 - Prevention rule: When planning a step, compare the planned test count against the TASK.md numbers and flag any difference as a decision for the user. Bug pins count toward the brief's numbers.
+
+### 2026-11-25 — Picked tool-caught mistakes for the curated worklog list
+
+- What I did wrong: When proposing the 3–5 curated mistakes for AI_WORKLOG.md, I picked them for variety of detection method (tsc, git status, implausible script output, user review). TASK.md asks for "places where the agent made mistakes, and how **you** caught them", that is, mistakes the human caught, not ones the agent's own tooling caught.
+- How it was caught: user review of the Phase 5.1 proposal.
+- Fix: the curated list only uses raw-log entries whose "How it was caught" is the user (review or manual check).
+- Prevention rule: Read the TASK.md wording for each deliverable literally (who does what) before choosing what goes into it.
