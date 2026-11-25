@@ -9,16 +9,16 @@
   - [x] 2.1 Explore the live API with curl → table of real status codes/bodies, list bug candidates
   - [x] 2.2 `src/api/types.ts`, `BookingClient`, booking data factory, `api` fixture
   - [x] 2.3 `tests/api/booking.spec.ts`: E2E flow (auth → create → update → delete → GET returns 404) with `test.step`; negatives: bad credentials, update without token, GET missing id, (invalid payload)
-- [ ] **Phase 3 — UI tests (saucedemo, standard_user)**
+- [x] **Phase 3 — UI tests (saucedemo, standard_user)**
   - [x] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
-  - [ ] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
+  - [x] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
 - [ ] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact
 - [ ] **Phase 5 — Docs**: README (run, coverage, left out, bug reports), curate AI_WORKLOG.md
 - [ ] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples
 
 ## Next step
 
-Phase 3.2: write the UI specs with the 3.1 fixtures (`test` / `guestTest` from `@src/fixtures/ui.fixture`) and data (`users`, `products`, `TAX_RATE`, `buildCustomer`, `loginErrors`, `checkoutErrors`). Core: login, catalog, sorting (4 options, price sorts as non-decreasing because of the $15.99 tie), cart add/remove, full checkout with overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without a session. Bugs: BUG-06, BUG-07, BUG-08 pinned with `test.fail()`. Propose the spec list and file split first, and wait for approval.
+Phase 4: GitHub Actions workflow (push + PR, Node LTS, `npm ci`, Chromium only, `npx playwright test`, upload `playwright-report/` + `test-results/` as an artifact with `if: always()`). Propose the workflow first and wait for approval.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -79,6 +79,11 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: `guestTest` = `test` with an empty `storageState`, for login and no-session tests. `auth.setup.ts` uses the `test` fixtures.
 - 2026-11-25: Postal code rule for BUG-08 (agreed with the user): only letters, digits, spaces and hyphens. The test expects an error to be visible and checkout to stay on step one. It does not check the message text, since none exists.
 - 2026-11-25: The POM was verified with a throwaway spec covering every locator and method (5/5 passed), then removed. `.playwright-mcp/` is gitignored.
+
+- 2026-11-25: Phase 3.2 specs: `login.spec.ts` (`guestTest`: 1 core + 3 negative), `catalog.spec.ts` (product list + one sorting test with a `test.step` per option, as the user chose), `cart.spec.ts` (add/remove flow + BUG-07), `checkout.spec.ts` (full checkout with totals, required fields, BUG-06, BUG-08). Totals: 12 UI tests + smoke. Full suite: 23 passed.
+- 2026-11-25: Price sorts are asserted by comparing the formatted price list (`$15.99` twice), so the tie cannot make the order ambiguous. Sort labels (`sortLabels`) were confirmed by the live run.
+- 2026-11-25: `formatPrice` + `orderTotals` (in cents, tax = round(8%)) were added to `src/data/products.ts`, so specs have no hardcoded money.
+- 2026-11-25: BUG-06 asserts that the `checkout` button is disabled with an empty cart, rather than walking to "Thank you". A full walk would make a fixed app fail on a click timeout, and `test.fail()` would then hide that the bug was fixed. The JSON reporter confirmed BUG-06/07/08 each fail on their own bug assertion (disabled←enabled, "Add to cart"←"Remove", error not found).
 
 ## Bugs found (candidates → confirmed)
 

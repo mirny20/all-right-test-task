@@ -20,3 +20,33 @@ export const TAX_RATE = 0.08;
 
 /** Sort option values of `product-sort-container`. */
 export type SortOption = 'az' | 'za' | 'lohi' | 'hilo';
+
+/** Sort option → label shown in `active-option`. */
+export const sortLabels: Record<SortOption, string> = {
+  az: 'Name (A to Z)',
+  za: 'Name (Z to A)',
+  lohi: 'Price (low to high)',
+  hilo: 'Price (high to low)',
+};
+
+/** `29.99` → `$29.99`, as shown on item cards and checkout totals. */
+export function formatPrice(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+export interface OrderTotals {
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+/** Expected overview totals, computed in cents to avoid float drift. */
+export function orderTotals(items: readonly Product[]): OrderTotals {
+  const subtotalCents = items.reduce((sum, item) => sum + Math.round(item.price * 100), 0);
+  const taxCents = Math.round(subtotalCents * TAX_RATE);
+  return {
+    subtotal: subtotalCents / 100,
+    tax: taxCents / 100,
+    total: (subtotalCents + taxCents) / 100,
+  };
+}
