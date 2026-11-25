@@ -60,3 +60,10 @@ _To be curated in Phase 5 from the Raw log below._
 - How it was caught: Manual check of `git status` before proposing the commit; unexpected `M TASK.md`.
 - Fix: `git checkout -- TASK.md CLAUDE.md`; added TASK.md to `.prettierignore`. I first ignored CLAUDE.md too; the user corrected that only TASK.md is frozen (CLAUDE.md may be edited/formatted). Rules added to CLAUDE.md Working agreement.
 - Prevention rule: Review `git status`/`git diff --stat` before every commit proposal; any file outside the step's scope is a red flag. Repo-wide formatters/codemods must exclude verbatim/instruction files.
+
+### 2026-11-25 — Phase 3.1 setup relied on a POM readiness check as its only assertion
+
+- What I did wrong: `auth.setup.ts` called `inventoryPage.waitForLoaded()` (which asserts internally) and had no `expect` in the test body.
+- How it was caught: lint (`playwright/expect-expect` warning).
+- Fix: the setup asserts explicitly with `expect(inventoryPage.title).toHaveText('Products')`.
+- Prevention rule: Specs and setups must have a visible `expect`. `waitForLoaded()` is for readiness inside flows, not a substitute for the test's assertion.

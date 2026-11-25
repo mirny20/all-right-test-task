@@ -11,6 +11,7 @@ export const env = {
     baseURL: 'https://www.saucedemo.com',
     username: envOr('SAUCE_USERNAME', 'standard_user'),
     password: envOr('SAUCE_PASSWORD', 'secret_sauce'),
+    lockedUsername: envOr('SAUCE_LOCKED_USERNAME', 'locked_out_user'),
   },
   booker: {
     baseURL: 'https://restful-booker.herokuapp.com',

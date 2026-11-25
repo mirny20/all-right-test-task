@@ -1,7 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@src/fixtures/ui.fixture';
 
-test('should open inventory with a saved session', { tag: ['@smoke', '@ui'] }, async ({ page }) => {
-  await page.goto('/inventory.html');
-  await expect(page.getByTestId('title')).toHaveText('Products');
-  await expect(page.getByTestId('inventory-list')).toBeVisible();
-});
+test(
+  'should open inventory with a saved session',
+  { tag: ['@smoke', '@ui'] },
+  async ({ inventoryPage }) => {
+    await inventoryPage.goto();
+    await expect(inventoryPage.title).toHaveText('Products');
+    await expect(inventoryPage.inventoryList).toBeVisible();
+  },
+);

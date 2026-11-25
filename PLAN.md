@@ -10,7 +10,7 @@
   - [x] 2.2 `src/api/types.ts`, `BookingClient`, booking data factory, `api` fixture
   - [x] 2.3 `tests/api/booking.spec.ts`: E2E flow (auth → create → update → delete → GET returns 404) with `test.step`; negatives: bad credentials, update without token, GET missing id, (invalid payload)
 - [ ] **Phase 3 — UI tests (saucedemo, standard_user)**
-  - [ ] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
+  - [x] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
   - [ ] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
 - [ ] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact
 - [ ] **Phase 5 — Docs**: README (run, coverage, left out, bug reports), curate AI_WORKLOG.md
@@ -18,7 +18,7 @@
 
 ## Next step
 
-Phase 3.1: explore saucedemo with Playwright MCP (or codegen) and build a `data-test` inventory for login, inventory, cart and the checkout steps (1, 2, complete), plus the header/burger menu. Then propose the POM (pages + header/cart-badge and burger-menu components), the `ui` fixture and `auth.setup.ts` (already scaffolded), and wait for approval before implementing.
+Phase 3.2: write the UI specs with the 3.1 fixtures (`test` / `guestTest` from `@src/fixtures/ui.fixture`) and data (`users`, `products`, `TAX_RATE`, `buildCustomer`, `loginErrors`, `checkoutErrors`). Core: login, catalog, sorting (4 options, price sorts as non-decreasing because of the $15.99 tie), cart add/remove, full checkout with overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without a session. Bugs: BUG-06, BUG-07, BUG-08 pinned with `test.fail()`. Propose the spec list and file split first, and wait for approval.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -48,6 +48,16 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 | 20  | `POST /booking` checkout < checkin           | —    | **200**       | created as is                            |
 | 21  | `POST /booking` without `Accept` header      | —    | 200           | JSON (works without the header too)      |
 
+## UI findings (3.1, verified with Playwright MCP against the live site on 2026-11-25)
+
+- Session = `session-username` cookie. Cart = `localStorage["cart-contents"]` (e.g. `[4,0]`). Both are in `storageState`, saved right after login, so every test starts with an empty cart.
+- Login errors (`data-test="error"`, h3): wrong password, `locked_out_user`, empty username, and no session on `/inventory.html` (redirects to `/`). Exact texts are in `src/data/messages.ts`.
+- Inventory: 6 items, `product-sort-container` options `az`/`za`/`lohi`/`hilo` (default `az`), and `active-option` shows the label. Two items cost $15.99 (Bolt T-Shirt, Red T-Shirt).
+- Each item's add/remove button is `add-to-cart-<slug>`, which becomes `remove-<slug>`. The image and title links inside an item have role `button` ("View details for …"), so the POM matches the button by exact name.
+- Burger menu: the open button is `getByRole('button', { name: 'Open Menu' })` (`data-test="open-menu"` is on the inner `<img>`). The open menu covers the button, and Reset App State does not close it.
+- Checkout step one: each empty field shows its own error, in this order: First Name, Last Name, Postal Code. Step two: `subtotal-label` / `tax-label` / `total-label`, tax = 8% rounded to cents. Complete: cart and badge are cleared.
+- Console: one `Permissions policy violation: unload` error on every page (site/third-party script), ignored.
+
 ## Decisions log
 
 - 2026-11-25: Chromium only; cross-browser intentionally left out (scope/time). Document it in the README.
@@ -65,6 +75,11 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: Phase 2.3 is split into `tests/api/booking.spec.ts` (E2E, `test.step` per stage) and `tests/api/booking.negative.spec.ts` (`@negative`). BUG-01…05 are pinned with `test.fail()` + a `bug` annotation. The JSON reporter confirmed each one fails for the documented reason (401←200, 400←500, 400←200, 400←200, 404←405).
 - 2026-11-25: The E2E test creates its own booking and deletes it in `finally` without asserting the status (it is 405 after a successful flow, BUG-05). The BUG-02/03/04 tests delete any wrongly created booking (200) before the failing assertion, via a `deleteIfCreated` helper outside the test body (lint: no conditionals in tests).
 
+- 2026-11-25: POM: `AppPage` base (header, burger menu, `title`, `goto`, `waitForLoaded`) for logged-in pages. `LoginPage` is standalone. `ItemListComponent` is shared by the inventory, cart and overview pages and finds items by exact name (regex-escaped). `waitForLoaded()` is the only `expect` inside POM, and specs must still assert explicitly (lint `expect-expect`).
+- 2026-11-25: `guestTest` = `test` with an empty `storageState`, for login and no-session tests. `auth.setup.ts` uses the `test` fixtures.
+- 2026-11-25: Postal code rule for BUG-08 (agreed with the user): only letters, digits, spaces and hyphens. The test expects an error to be visible and checkout to stay on step one. It does not check the message text, since none exists.
+- 2026-11-25: The POM was verified with a throwaway spec covering every locator and method (5/5 passed), then removed. `.playwright-mcp/` is gitignored.
+
 ## Bugs found (candidates → confirmed)
 
 API (confirmed 2026-11-25, see the findings table; pinned with `test.fail()` in `tests/api/booking.negative.spec.ts`):
@@ -77,9 +92,13 @@ API (confirmed 2026-11-25, see the findings table; pinned with `test.fail()` in 
 
 Rejected candidates: "create returns 200" and "delete returns 201" are documented in the apidoc (see Decisions). "Malformed body returns 500" was refined: malformed JSON → 400, missing fields → 500 (BUG-02).
 
-UI candidates (verify in Phase 3): checkout possible with an empty cart; postal code accepts any string; "Reset App State" leaves "Remove" buttons until reload.
+UI (confirmed live 2026-11-25 with Playwright MCP; tests in Phase 3.2):
+
+- **BUG-06** Checkout completes with an empty cart: Cart → Checkout → info → overview (`Item total: $0`, `Total: $0.00`) → Finish → "Thank you for your order!" (expected: Checkout disabled, or an error).
+- **BUG-07** After burger menu → Reset App State, the cart badge and storage are cleared, but the item buttons still say "Remove" (expected "Add to cart").
+- **BUG-08** The postal code accepts any characters, e.g. `!!!abc` (expected: a validation error; rule above). Minor, seen with the empty cart: `Item total: $0` vs `Total: $0.00` (inconsistent money format), noted in the README only.
 
 ## Open questions
 
 - Bonus generator: headless `claude -p` vs `@anthropic-ai/sdk` script. Decide in Phase 6.
-- Use `locked_out_user` for a negative case (the task names only `standard_user`). Assumption: yes, documented in the README.
+- ~~Use `locked_out_user`?~~ Yes (approved in 3.1). `SAUCE_LOCKED_USERNAME` env, default `locked_out_user`. Document it in the README.

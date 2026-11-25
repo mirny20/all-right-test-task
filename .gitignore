@@ -6,3 +6,6 @@ test-results/
 blob-report/
 playwright/.cache/
 .DS_Store
+
+# Playwright MCP snapshots/console logs (exploration only)
+.playwright-mcp/
