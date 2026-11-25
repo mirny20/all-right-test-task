@@ -101,23 +101,6 @@ test.describe('checkout', { tag: '@ui' }, () => {
         await expect(checkoutInfoPage.title).toHaveText('Checkout: Your Information');
       });
     });
-
-    test(
-      'should reject a postal code with special characters',
-      {
-        annotation: {
-          type: 'bug',
-          description: 'BUG-08: postal code accepts any characters, e.g. "!!!abc"',
-        },
-      },
-      async ({ checkoutInfoPage }) => {
-        test.fail();
-        await checkoutInfoPage.submitInfo(buildCustomer({ postalCode: '!!!abc' }));
-
-        await expect(checkoutInfoPage.error).toBeVisible();
-        await expect(checkoutInfoPage.title).toHaveText('Checkout: Your Information');
-      },
-    );
   });
 
   test(

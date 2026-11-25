@@ -1,11 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { BurgerMenuComponent } from './components/BurgerMenuComponent';
 import { HeaderComponent } from './components/HeaderComponent';
 
-/** Base for every logged-in page: header, burger menu and the `title` heading. */
+/** Base for every logged-in page: header and the `title` heading. */
 export abstract class AppPage {
   readonly header: HeaderComponent;
-  readonly menu: BurgerMenuComponent;
   readonly title: Locator;
 
   protected abstract readonly path: string;
@@ -13,7 +11,6 @@ export abstract class AppPage {
 
   constructor(protected readonly page: Page) {
     this.header = new HeaderComponent(page);
-    this.menu = new BurgerMenuComponent(page);
     this.title = page.getByTestId('title');
   }
 

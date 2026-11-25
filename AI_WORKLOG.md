@@ -81,3 +81,10 @@ _To be curated in Phase 5 from the Raw log below._
 - How it was caught: user review.
 - Fix: `.env.example` now has blank password values (and a blank BOOKER_USERNAME); only non-secret usernames stay. I removed the password from PLAN.md. The `gh secret set` instructions prompt for the value instead of passing it on the command line (keeps it out of shell history).
 - Prevention rule: Before proposing a commit, run `git grep` for every credential value. Templates (`.env.example`) hold names and placeholders, never real secret values.
+
+### 2026-11-25 — Planned and wrote more tests than TASK.md asks for, without flagging it
+
+- What I did wrong: TASK.md asks for 5–7 UI core tests + 2–3 UI negatives, and one API flow + 2–3 API negatives (10–14 in total). PLAN.md 2.3 and 3.2 already listed 4 negatives per area. Then every confirmed bug got its own `test.fail()` pin, so the suite ended up with 20 tests (14 negatives) + 2 smoke specs. The overshoot was never recorded as a decision.
+- How it was caught: user review ("how many tests does TASK.md ask for, and how many are written?").
+- Fix: trimmed to 12 tests (UI 5 core + 3 negative, API 1 flow + 3 negative). Only the most critical bugs keep automated pins (BUG-01, BUG-02, BUG-06). BUG-03/04/05/07/08 are documented in the README as bug reports with manual repro steps. The smoke specs were removed.
+- Prevention rule: When planning a step, compare the planned test count against the TASK.md numbers and flag any difference as a decision for the user. Bug pins count toward the brief's numbers.

@@ -46,7 +46,6 @@ jobs:
         env:
           SAUCE_USERNAME: ${{ vars.SAUCE_USERNAME }}
           SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
-          SAUCE_LOCKED_USERNAME: ${{ vars.SAUCE_LOCKED_USERNAME }}
           BOOKER_USERNAME: ${{ vars.BOOKER_USERNAME }}
           BOOKER_PASSWORD: ${{ secrets.BOOKER_PASSWORD }}
 

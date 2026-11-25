@@ -19,7 +19,6 @@ export const env = {
     baseURL: 'https://www.saucedemo.com',
     username: requireEnv('SAUCE_USERNAME'),
     password: requireEnv('SAUCE_PASSWORD'),
-    lockedUsername: requireEnv('SAUCE_LOCKED_USERNAME'),
   },
   booker: {
     baseURL: 'https://restful-booker.herokuapp.com',

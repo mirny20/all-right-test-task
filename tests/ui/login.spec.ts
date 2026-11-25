@@ -27,28 +27,4 @@ test.describe('login', { tag: '@ui' }, () => {
       await expect(page).not.toHaveURL(/inventory\.html/);
     },
   );
-
-  test(
-    'should block locked_out_user with an error',
-    { tag: '@negative' },
-    async ({ page, loginPage }) => {
-      await loginPage.goto();
-      await loginPage.login(users.lockedOut);
-
-      await expect(loginPage.error).toHaveText(loginErrors.lockedOut);
-      await expect(page).not.toHaveURL(/inventory\.html/);
-    },
-  );
-
-  test(
-    'should redirect to login with an error when opening the inventory without a session',
-    { tag: '@negative' },
-    async ({ page, loginPage, inventoryPage }) => {
-      await inventoryPage.goto();
-
-      await expect(page).toHaveURL(/\/$/);
-      await expect(loginPage.loginButton).toBeVisible();
-      await expect(loginPage.error).toHaveText(loginErrors.notLoggedIn('/inventory.html'));
-    },
-  );
 });

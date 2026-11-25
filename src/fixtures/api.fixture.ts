@@ -37,9 +37,9 @@ export const test = base.extend<ApiFixtures>({
 
     await use(created);
 
-    // 201 = deleted now; 405 = the test already deleted it (BUG-05: should be 404).
+    // No test deletes this booking itself, so cleanup must succeed (restful-booker DELETE = 201).
     const cleanup = await bookingClient.deleteBooking(created.bookingid, token);
-    expect([201, 405], 'cleanup DELETE status').toContain(cleanup.status());
+    expect(cleanup.status(), 'cleanup DELETE status').toBe(201);
   },
 });
 

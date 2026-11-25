@@ -49,27 +49,4 @@ test.describe('cart', { tag: '@ui' }, () => {
       await expect(inventoryPage.products.cartButton(bikeLight.name)).toHaveText('Add to cart');
     });
   });
-
-  test(
-    'should reset item buttons to "Add to cart" after Reset App State',
-    {
-      tag: '@negative',
-      annotation: {
-        type: 'bug',
-        description:
-          'BUG-07: after Reset App State the cart is cleared, but item buttons still say "Remove"',
-      },
-    },
-    async ({ inventoryPage }) => {
-      test.fail();
-      await inventoryPage.addToCart(backpack.name, bikeLight.name);
-      await expect(inventoryPage.header.cartBadge).toHaveText('2');
-
-      await inventoryPage.menu.resetAppState();
-
-      await expect(inventoryPage.header.cartBadge).toBeHidden();
-      await expect(inventoryPage.products.cartButton(backpack.name)).toHaveText('Add to cart');
-      await expect(inventoryPage.products.cartButton(bikeLight.name)).toHaveText('Add to cart');
-    },
-  );
 });

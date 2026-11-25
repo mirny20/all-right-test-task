@@ -10,10 +10,6 @@ import type { Booking, BookingFilter, Credentials } from './types';
 export class BookingClient {
   constructor(private readonly request: APIRequestContext) {}
 
-  ping(): Promise<APIResponse> {
-    return this.request.get('/ping');
-  }
-
   auth(credentials: Credentials): Promise<APIResponse> {
     return this.request.post('/auth', { data: credentials });
   }

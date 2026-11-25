@@ -13,12 +13,14 @@
   - [x] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
   - [x] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
 - [x] **Phase 4 — CI**: GitHub Actions on push/PR, Chromium, upload `playwright-report/` + `test-results/` as artifact. First run green (run 45666319745: 23 passed, artifact `playwright-report-1` downloaded and checked).
-- [ ] **Phase 5 — Docs**: README (run, coverage, left out, bug reports), curate AI_WORKLOG.md
+- [ ] **Phase 5 — Docs**
+  - [x] 5.0 Trim the suite to the TASK.md numbers: 12 tests (UI 5 core + 3 negative, API 1 flow + 3 negative). Smoke specs removed.
+  - [ ] 5.1 README (run, coverage, left out, bug reports) and curate AI_WORKLOG.md
 - [ ] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples
 
 ## Next step
 
-Phase 5: README (how to run incl. `.env` + CI secrets/variables setup, coverage, what was left out, bug reports BUG-01…08 as steps / expected / actual) and curate AI_WORKLOG.md (agent setup, key prompts, 3–5 mistakes from the raw log). Propose the README outline first.
+Phase 5.1: README (how to run incl. `.env` + CI secrets/variables setup, coverage, what was left out, bug reports BUG-01…08 as steps / expected / actual, each marked automated or manual repro) and curate AI_WORKLOG.md (agent setup, key prompts, 3–5 mistakes from the raw log). The README outline was proposed in the 5.0 session; re-confirm it and settle the key prompts and the 5 curated mistakes before writing.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -89,9 +91,11 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: Workflow `.github/workflows/playwright.yml` runs on push (all branches), PRs to `main` and manual dispatch. Concurrency cancels older runs. Steps: Node `lts/*` → `npm ci` → install Chromium → typecheck, lint, format:check → tests. `playwright-report/` + `test-results/` are uploaded with `if: !cancelled()` and kept 14 days. JUnit/job summary was left out because TASK.md only asks for an uploaded report. Local `CI=1` run: 23 passed.
 - 2026-11-25: CI actions bumped from v4 to v7 (`checkout`, `setup-node`, `upload-artifact`) to clear the deprecated-Node-20 warning. Release notes v5–v7 were checked, and no breaking change affects this workflow.
 
+- 2026-11-25: Phase 5.0: the suite had 20 tests + 2 smoke specs against the TASK.md brief of 10–14 (UI 5–7 core + 2–3 negative, API 1 flow + 2–3 negative). The overshoot came from the plan (4 negatives per area) and from one `test.fail()` pin per bug. The user chose to trim it to 12: UI = login, product list, sorting, cart, full checkout + wrong password, required checkout fields, BUG-06; API = E2E flow + update without token (403), BUG-01, BUG-02. Removed: `locked_out_user`, the no-session redirect, GET missing id (the E2E already asserts 404 after delete), BUG-03/04/05/07/08 pins, and both smoke specs. This reverses the earlier "smoke specs stay" decision. The removed bugs are still documented in the README with manual repro steps, and their code is in git history (`5582d50`, `924189e`). The removed code's now-unused helpers were deleted: `SAUCE_LOCKED_USERNAME` (env, `.env.example`, CI), `BurgerMenuComponent`, `BookingClient.ping`, unused users and messages. `createdBooking` teardown now requires 201 (only the BUG-05 test deleted the booking itself). Full suite: 13 passed (12 + setup), and the JSON reporter confirmed BUG-01/02/06 fail on their own assertions.
+
 ## Bugs found (candidates → confirmed)
 
-API (confirmed 2026-11-25, see the findings table; pinned with `test.fail()` in `tests/api/booking.negative.spec.ts`):
+API (confirmed 2026-11-25, see the findings table). Since 5.0 only BUG-01 and BUG-02 are pinned with `test.fail()` in `tests/api/booking.negative.spec.ts`; BUG-03/04/05 are manual repro only:
 
 - **BUG-01** `POST /auth` with bad credentials returns **200** + `{"reason":"Bad credentials"}` (expected 401). (#2, #3)
 - **BUG-02** `POST /booking` with a missing required field returns **500** (expected 400). (#17)
@@ -101,7 +105,7 @@ API (confirmed 2026-11-25, see the findings table; pinned with `test.fail()` in 
 
 Rejected candidates: "create returns 200" and "delete returns 201" are documented in the apidoc (see Decisions). "Malformed body returns 500" was refined: malformed JSON → 400, missing fields → 500 (BUG-02).
 
-UI (confirmed live 2026-11-25 with Playwright MCP; tests in Phase 3.2):
+UI (confirmed live 2026-11-25 with Playwright MCP). Since 5.0 only BUG-06 is pinned (`tests/ui/checkout.spec.ts`); BUG-07/08 are manual repro only:
 
 - **BUG-06** Checkout completes with an empty cart: Cart → Checkout → info → overview (`Item total: $0`, `Total: $0.00`) → Finish → "Thank you for your order!" (expected: Checkout disabled, or an error).
 - **BUG-07** After burger menu → Reset App State, the cart badge and storage are cleared, but the item buttons still say "Remove" (expected "Add to cart").
@@ -110,4 +114,4 @@ UI (confirmed live 2026-11-25 with Playwright MCP; tests in Phase 3.2):
 ## Open questions
 
 - Bonus generator: headless `claude -p` vs `@anthropic-ai/sdk` script. Decide in Phase 6.
-- ~~Use `locked_out_user`?~~ Yes (approved in 3.1). `SAUCE_LOCKED_USERNAME` env var (no default in code since Phase 4). Document it in the README.
+- ~~Use `locked_out_user`?~~ Was yes in 3.1; the test and `SAUCE_LOCKED_USERNAME` were removed in 5.0 (scope trim). Delete the GitHub Variable.
