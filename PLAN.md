@@ -5,10 +5,10 @@
 - [x] **Phase 1 — Setup**
   - [x] 1.1 Repo bootstrap: `git init`, TASK.md, CLAUDE.md, PLAN.md, AI_WORKLOG.md skeleton
   - [x] 1.2 Scaffold: Playwright + TS (projects `setup`/`api`/`ui`), strict tsconfig, ESLint + Prettier, `.env.example`, `.gitignore`, npm scripts, folder structure, one smoke test per project
-- [ ] **Phase 2 — API tests (restful-booker)**
+- [x] **Phase 2 — API tests (restful-booker)**
   - [x] 2.1 Explore the live API with curl → table of real status codes/bodies, list bug candidates
   - [x] 2.2 `src/api/types.ts`, `BookingClient`, booking data factory, `api` fixture
-  - [ ] 2.3 `tests/api/booking.spec.ts`: E2E flow (auth → create → update → delete → GET returns 404) with `test.step`; negatives: bad credentials, update without token, GET missing id, (invalid payload)
+  - [x] 2.3 `tests/api/booking.spec.ts`: E2E flow (auth → create → update → delete → GET returns 404) with `test.step`; negatives: bad credentials, update without token, GET missing id, (invalid payload)
 - [ ] **Phase 3 — UI tests (saucedemo, standard_user)**
   - [ ] 3.1 Explore with Playwright MCP → `data-test` inventory → POM proposal → implement pages, components, fixtures, `auth.setup.ts`
   - [ ] 3.2 Specs. Core: login, catalog, sorting (4 options), cart add/remove, full checkout, overview totals. Negative/edge: wrong password, locked_out_user, checkout required fields, direct `/inventory.html` without session
@@ -18,14 +18,7 @@
 
 ## Next step
 
-Phase 2.3: `tests/api/booking.spec.ts`. One E2E test with `test.step` per stage: auth → create (200, body echoes payload) → GET (200) → PUT (200, updated body) → DELETE (201, `Created`) → GET (404, `Not Found`). Uses the `token` fixture and creates its own booking. Negatives:
-
-- PUT without a token, using `createdBooking` (403 `Forbidden`)
-- GET with a missing id (404)
-- bad credentials (BUG-01, `test.fail()`)
-- missing required field (BUG-02, `test.fail()`)
-
-Optional: BUG-03/04/05 as `test.fail()` cases. Tags: `@api`, `@negative`.
+Phase 3.1: explore saucedemo with Playwright MCP (or codegen) and build a `data-test` inventory for login, inventory, cart and the checkout steps (1, 2, complete), plus the header/burger menu. Then propose the POM (pages + header/cart-badge and burger-menu components), the `ui` fixture and `auth.setup.ts` (already scaffolded), and wait for approval before implementing.
 
 ## API findings (2.1, verified with curl against the live API on 2026-11-25)
 
@@ -69,9 +62,12 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 - 2026-11-25: `BookingClient` returns raw `APIResponse` and never parses bodies; specs assert status + body. `*Raw(body: unknown)` methods exist for invalid-payload cases. The token is an optional arg sent as `Cookie: token=…`.
 - 2026-11-25: The `api` fixture provides `bookingClient`, `token` (asserts 200 + token, throws on `{reason}`) and `createdBooking`. `createdBooking` is auto-deleted at teardown, and teardown accepts 201 or 405 (already deleted by the test, BUG-05). Verified with a throwaway spec (round-trip + already-deleted teardown), then removed.
 
+- 2026-11-25: Phase 2.3 is split into `tests/api/booking.spec.ts` (E2E, `test.step` per stage) and `tests/api/booking.negative.spec.ts` (`@negative`). BUG-01…05 are pinned with `test.fail()` + a `bug` annotation. The JSON reporter confirmed each one fails for the documented reason (401←200, 400←500, 400←200, 400←200, 404←405).
+- 2026-11-25: The E2E test creates its own booking and deletes it in `finally` without asserting the status (it is 405 after a successful flow, BUG-05). The BUG-02/03/04 tests delete any wrongly created booking (200) before the failing assertion, via a `deleteIfCreated` helper outside the test body (lint: no conditionals in tests).
+
 ## Bugs found (candidates → confirmed)
 
-API (confirmed 2026-11-25, see the findings table; to be pinned with `test.fail()` in 2.3):
+API (confirmed 2026-11-25, see the findings table; pinned with `test.fail()` in `tests/api/booking.negative.spec.ts`):
 
 - **BUG-01** `POST /auth` with bad credentials returns **200** + `{"reason":"Bad credentials"}` (expected 401). (#2, #3)
 - **BUG-02** `POST /booking` with a missing required field returns **500** (expected 400). (#17)

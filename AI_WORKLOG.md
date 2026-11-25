@@ -19,6 +19,13 @@ _To be curated in Phase 5 from the Raw log below._
 
 ## Raw log
 
+### 2026-11-25 — Phase 2.3 specs failed lint (unused destructured var, conditional in test)
+
+- What I did wrong: Omitted `firstname` via `const { firstname: _omitted, ...rest }` (the `_` prefix isn't allowed by the `no-unused-vars` config), and put `if (bookingId !== undefined)` cleanup inside the test's `finally` (`playwright/no-conditional-in-test`).
+- How it was caught: lint (`npm run lint`) after the tests and `tsc` had passed.
+- Fix: `Partial<Booking>` + `delete`. Create the booking before the `try`, so the `finally` deletes it unconditionally.
+- Prevention rule: Run lint together with `tsc` before reporting a step. Keep conditional logic in helpers outside the test body.
+
 ### 2026-11-25 — Execution plan had a step ordering bug (PLAN.md missing at its own verification step)
 
 - What I did wrong: The plan put creating PLAN.md in Step 1.2. But the CLAUDE.md template imports `@PLAN.md`, and the Step 1.1 check ("a new session can answer 'what is Phase 2?'") needs PLAN.md to exist already. The check could not pass as written.
