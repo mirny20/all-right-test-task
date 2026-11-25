@@ -23,7 +23,7 @@ Whenever (a) the user corrects you, (b) a test run reveals your code was wrong, 
 append an entry to the "Raw log" section of AI_WORKLOG.md immediately, before continuing:
 
 ```
-### <date> — <short title>
+### <short title>
 - What I did wrong:
 - How it was caught: (user review / failing test / lint / tsc / manual check)
 - Fix:

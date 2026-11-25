@@ -34,7 +34,7 @@ cp .env.example .env      # then fill in the values (see below)
 | `npm run report`                                              | open the last HTML report                     |
 | `npm run typecheck` · `npm run lint` · `npm run format:check` | static checks (CI runs all three)             |
 
-A green run shows `12 passed` plus the `setup` test. The 3 bug pins count as passed, because they are `test.fail()` tests that fail as expected (see [Known bugs in the suite](#known-bugs-in-the-suite)).
+A green run shows `12 passed` plus the `setup` test. The 3 bug pins count as passed, because they are `test.fail()` tests that fail as expected (see [Bugs found](#bugs-found)).
 
 ### CI
 
@@ -93,83 +93,22 @@ Design choices:
 | 3   | should reject auth with a wrong password with 401  | negative | **BUG-01** pin (`test.fail()`)                                                                                            |
 | 4   | should reject a booking without firstname with 400 | negative | **BUG-02** pin (`test.fail()`)                                                                                            |
 
-### API behaviour that is documented, not a bug
-
-These calls don't follow REST conventions, but they match the [apidoc](https://restful-booker.herokuapp.com/apidoc), so the tests assert them as documented:
-
-- `POST /booking` returns **200**, not 201.
-- `DELETE /booking/{id}` returns **201 Created**, with body `Created`.
-- `GET /ping` returns **201**.
-- Error responses are `text/plain` with the status text as the body (`Forbidden`, `Not Found`), even with `Accept: application/json`.
-
 ## What was intentionally left out
 
-- **Other browsers.** Only Chromium runs. The flows are not browser-specific, and three browsers would triple a slow CI run against public demo sites.
-- **Other saucedemo users** (`locked_out_user`, `problem_user`, `performance_glitch_user`, …). The brief names `standard_user`. A `locked_out_user` test existed and was removed when the suite was trimmed to the brief (it is in git history, `924189e`).
-- **A bug pin for every bug found.** The brief asks for 2–3 negative cases per area. Only the 3 most critical bugs are pinned. The other five (BUG-03, 04, 05, 07, 08) are documented below with manual repro steps. Their removed pins are in git history (`5582d50`, `924189e`).
-- **Other trimmed tests.** "GET a missing id → 404" was dropped because the E2E flow already asserts 404 after delete. "Direct `/inventory.html` without a session" and the smoke specs were also dropped.
-- **Untested API endpoints:** `PATCH`, `GET /booking` filters, XML bodies, Basic auth.
-- **Other test types:** visual regression, accessibility, performance/load, mobile viewports.
-- **Extra reporters** (JUnit, Allure). The brief asks for an uploaded report, and the HTML report covers it.
+- **Firefox and WebKit.** Only Chromium runs. The flows under test are plain forms, links and client-side state, with no browser-specific APIs. Two more engines would roughly triple the run time against slow public demo sites, without a matching chance of finding new bugs. Adding them is a config change (`projects` in `playwright.config.ts`).
+- **Performance and load testing.** Both systems are free public instances shared by everyone who practises on them. Load-testing a service you don't own degrades it for other users, and its numbers say nothing about a real deployment.
+- **Security testing** (injection, auth bypass, fuzzing). Probing a third-party service for vulnerabilities needs the owner's permission, which a public demo doesn't give. The suite checks only the documented auth behaviour: a missing token is rejected, and bad credentials should be rejected (BUG-01).
+- **Visual regression.** Screenshot baselines of a site we don't control break on any upstream change, and they differ by OS and font rendering unless the run is pinned to one Docker image. Here they would mostly detect redesigns, not bugs. The functional assertions already cover the content that matters (names, prices, totals, messages).
+- **Accessibility audits** (e.g. axe-core). An automated scan of a demo site would report a long list of existing issues that nobody here can fix or triage with the site owner. In a real product this would be one of the first additions.
+- **Mocking the backends.** All tests run against the live services on purpose: the goal is to find real bugs, and mocks would only test our assumptions. The cost is that a run depends on both sites being up. CI retries a failed test up to 2 times, and the API project has a longer 60 s timeout for the slow Heroku instance.
 
 ## Bugs found
 
-All bugs were reproduced against the live sites on 2026-11-25. **Status** says whether a bug is pinned in the suite or reproduced manually.
+**Status** says whether a bug is pinned in the suite or reproduced manually. The suite pins BUG-01, BUG-02 and BUG-06 as `test.fail()` tests, which are reported as passed while the bug is present.
 
-### Known bugs in the suite
+### saucedemo.com (UI)
 
-The suite pins BUG-01, BUG-02 and BUG-06 as `test.fail()` tests. They are reported as passed while the bug is present.
-
-### BUG-01: `POST /auth` with wrong credentials returns 200 instead of 401
-
-- **Severity:** Major
-- **Status:** Automated (`tests/api/booking.negative.spec.ts`, "should reject auth with a wrong password with 401")
-- **Steps:**
-  1. `POST https://restful-booker.herokuapp.com/auth` with `Content-Type: application/json` and body `{"username":"admin","password":"wrong"}`.
-- **Expected:** `401 Unauthorized`.
-- **Actual:** `200 OK` with body `{"reason":"Bad credentials"}`. An empty body `{}` gives the same result. Clients can't tell a failed login from a successful one by the status code.
-
-### BUG-02: `POST /booking` with a missing required field returns 500
-
-- **Severity:** Major
-- **Status:** Automated (`tests/api/booking.negative.spec.ts`, "should reject a booking without firstname with 400")
-- **Steps:**
-  1. `POST /booking` with a valid booking body that leaves out `firstname`, e.g. `{"lastname":"QA","totalprice":1,"depositpaid":true,"bookingdates":{"checkin":"2026-12-01","checkout":"2026-12-02"}}`.
-- **Expected:** `400 Bad Request`, with a message about the missing field.
-- **Actual:** `500 Internal Server Error`. An empty body `{}` gives the same result. Missing input crashes the server instead of failing validation. (Malformed JSON gets a correct 400.)
-
-### BUG-03: `POST /booking` accepts a non-numeric `totalprice` and stores `null`
-
-- **Severity:** Major (silent data loss)
-- **Status:** Manual repro
-- **Steps:**
-  1. `POST /booking` with a valid body, but `"totalprice":"abc"`.
-  2. `GET /booking/{bookingid}`.
-- **Expected:** `400 Bad Request`, and no booking is created.
-- **Actual:** `200 OK`. The booking is created with `"totalprice": null`.
-
-### BUG-04: `POST /booking` accepts a checkout date before the checkin date
-
-- **Severity:** Medium
-- **Status:** Manual repro
-- **Steps:**
-  1. `POST /booking` with a valid body, but `"bookingdates":{"checkin":"2026-12-10","checkout":"2026-12-01"}`.
-- **Expected:** `400 Bad Request` (checkout must not be before checkin).
-- **Actual:** `200 OK`. The booking is stored with the dates as sent.
-
-### BUG-05: `DELETE` / `PUT` on a deleted booking returns 405 instead of 404
-
-- **Severity:** Minor
-- **Status:** Manual repro
-- **Steps:**
-  1. `POST /auth` with valid credentials and take the `token`.
-  2. `POST /booking` with a valid body and take the `bookingid`.
-  3. `DELETE /booking/{bookingid}` with `Cookie: token=<token>` → `201 Created`.
-  4. Send the same `DELETE` again, and a valid `PUT /booking/{bookingid}` with the same cookie.
-- **Expected:** `404 Not Found`, which is what `GET` returns for the same id.
-- **Actual:** `405 Method Not Allowed` for both. That status means the method isn't supported on the resource, which is misleading here.
-
-### BUG-06: Checkout can be completed with an empty cart
+#### BUG-06: Checkout can be completed with an empty cart
 
 - **Severity:** Major
 - **Status:** Automated (`tests/ui/checkout.spec.ts`, "should not allow checkout with an empty cart"). The test asserts that the Checkout button is disabled with an empty cart.
@@ -181,7 +120,7 @@ The suite pins BUG-01, BUG-02 and BUG-06 as `test.fail()` tests. They are report
 - **Expected:** Checkout is not possible with an empty cart: the Checkout button is disabled, or an error is shown.
 - **Actual:** Checkout is allowed at every step. The overview shows `Item total: $0` and `Total: $0.00`, and Finish shows "Thank you for your order!".
 
-### BUG-07: Reset App State leaves item buttons showing "Remove"
+#### BUG-07: Reset App State leaves item buttons showing "Remove"
 
 - **Severity:** Minor
 - **Status:** Manual repro
@@ -192,7 +131,7 @@ The suite pins BUG-01, BUG-02 and BUG-06 as `test.fail()` tests. They are report
 - **Expected:** The cart is empty, and every item's button says **Add to cart**.
 - **Actual:** The badge and the stored cart are cleared, but the Backpack button still says **Remove** until the page is reloaded.
 
-### BUG-08: The postal code field accepts any characters
+#### BUG-08: The postal code field accepts any characters
 
 - **Severity:** Minor
 - **Status:** Manual repro
@@ -204,6 +143,57 @@ The suite pins BUG-01, BUG-02 and BUG-06 as `test.fail()` tests. They are report
 - **Actual:** No error. Checkout goes on to the overview page.
 
 **Minor observation (not filed as a bug):** with an empty cart, the overview shows `Item total: $0` but `Total: $0.00`. The two lines format money differently.
+
+### restful-booker.herokuapp.com (API)
+
+#### BUG-01: `POST /auth` with wrong credentials returns 200 instead of 401
+
+- **Severity:** Major
+- **Status:** Automated (`tests/api/booking.negative.spec.ts`, "should reject auth with a wrong password with 401")
+- **Steps:**
+  1. `POST https://restful-booker.herokuapp.com/auth` with `Content-Type: application/json` and body `{"username":"admin","password":"wrong"}`.
+- **Expected:** `401 Unauthorized`.
+- **Actual:** `200 OK` with body `{"reason":"Bad credentials"}`. An empty body `{}` gives the same result. Clients can't tell a failed login from a successful one by the status code.
+
+#### BUG-02: `POST /booking` with a missing required field returns 500
+
+- **Severity:** Major
+- **Status:** Automated (`tests/api/booking.negative.spec.ts`, "should reject a booking without firstname with 400")
+- **Steps:**
+  1. `POST /booking` with a valid booking body that leaves out `firstname`, e.g. `{"lastname":"QA","totalprice":1,"depositpaid":true,"bookingdates":{"checkin":"2026-12-01","checkout":"2026-12-02"}}`.
+- **Expected:** `400 Bad Request`, with a message about the missing field.
+- **Actual:** `500 Internal Server Error`. An empty body `{}` gives the same result. Missing input crashes the server instead of failing validation. (Malformed JSON gets a correct 400.)
+
+#### BUG-03: `POST /booking` accepts a non-numeric `totalprice` and stores `null`
+
+- **Severity:** Major (silent data loss)
+- **Status:** Manual repro
+- **Steps:**
+  1. `POST /booking` with a valid body, but `"totalprice":"abc"`.
+  2. `GET /booking/{bookingid}`.
+- **Expected:** `400 Bad Request`, and no booking is created.
+- **Actual:** `200 OK`. The booking is created with `"totalprice": null`.
+
+#### BUG-04: `POST /booking` accepts a checkout date before the checkin date
+
+- **Severity:** Medium
+- **Status:** Manual repro
+- **Steps:**
+  1. `POST /booking` with a valid body, but `"bookingdates":{"checkin":"2026-12-10","checkout":"2026-12-01"}`.
+- **Expected:** `400 Bad Request` (checkout must not be before checkin).
+- **Actual:** `200 OK`. The booking is stored with the dates as sent.
+
+#### BUG-05: `DELETE` / `PUT` on a deleted booking returns 405 instead of 404
+
+- **Severity:** Minor
+- **Status:** Manual repro
+- **Steps:**
+  1. `POST /auth` with valid credentials and take the `token`.
+  2. `POST /booking` with a valid body and take the `bookingid`.
+  3. `DELETE /booking/{bookingid}` with `Cookie: token=<token>` → `201 Created`.
+  4. Send the same `DELETE` again, and a valid `PUT /booking/{bookingid}` with the same cookie.
+- **Expected:** `404 Not Found`, which is what `GET` returns for the same id.
+- **Actual:** `405 Method Not Allowed` for both. That status means the method isn't supported on the resource, which is misleading here.
 
 ## AI usage
 
