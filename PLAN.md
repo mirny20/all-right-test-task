@@ -20,7 +20,7 @@
 
 ## Next step
 
-All phases are done. Optional: final review of the repo as a reviewer would see it (README links, CI green on the last push), and delete the unused `SAUCE_LOCKED_USERNAME` GitHub Variable.
+All phases are done. Optional: final review of the repo as a reviewer would see it (README links, CI green on the last push).
 
 ## API findings (2.1, verified with curl against the live API)
 
@@ -123,4 +123,4 @@ UI (confirmed live with Playwright MCP). Since 5.0 only BUG-06 is pinned (`tests
 ## Open questions
 
 - ~~Bonus generator: headless `claude -p` vs `@anthropic-ai/sdk`?~~ `claude -p` (Phase 6).
-- ~~Use `locked_out_user`?~~ Was yes in 3.1; the test and `SAUCE_LOCKED_USERNAME` were removed in 5.0 (scope trim). Delete the GitHub Variable.
+- ~~Use `locked_out_user`?~~ Was yes in 3.1; the test and `SAUCE_LOCKED_USERNAME` were removed in 5.0 (scope trim). The GitHub Variable has been deleted.
