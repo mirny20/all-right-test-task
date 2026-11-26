@@ -1,6 +1,7 @@
 /** User-visible error texts on saucedemo (verified live 2026-11-25). */
 export const loginErrors = {
   wrongCredentials: 'Epic sadface: Username and password do not match any user in this service',
+  passwordRequired: 'Epic sadface: Password is required',
 } as const;
 
 export const checkoutErrors = {

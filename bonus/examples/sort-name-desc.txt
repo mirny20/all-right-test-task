@@ -1,0 +1,8 @@
+Title: Sort products by name Z to A
+Precondition: user is logged in
+Steps:
+1. Open the inventory page.
+2. Select "Name (Z to A)" in the sort dropdown.
+Expected result:
+- The dropdown shows "Name (Z to A)".
+- Products are listed in reverse alphabetical order; the first one is "Test.allTheThings() T-Shirt (Red)".

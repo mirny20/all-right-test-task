@@ -1,0 +1,10 @@
+Title: Remove an item on the cart page
+Precondition: user is logged in, cart is empty
+Steps:
+1. Open the inventory page.
+2. Add "Sauce Labs Backpack" and "Sauce Labs Onesie" to the cart.
+3. Open the cart.
+4. Click "Remove" for "Sauce Labs Backpack".
+Expected result:
+- The cart lists only "Sauce Labs Onesie".
+- The cart badge in the header shows 1.

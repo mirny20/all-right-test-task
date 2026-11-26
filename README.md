@@ -57,6 +57,7 @@ src/
 tests/
   ui/              auth.setup.ts + login, catalog, cart, checkout specs
   api/             booking.spec.ts (E2E flow), booking.negative.spec.ts
+bonus/             text test case → Playwright spec generator, examples, generated specs
 ```
 
 Design choices:
@@ -198,3 +199,5 @@ Design choices:
 ## AI usage
 
 The whole suite was written with Claude Code, working one step at a time from [PLAN.md](PLAN.md) under the rules in [CLAUDE.md](CLAUDE.md). [AI_WORKLOG.md](AI_WORKLOG.md) has the agent setup, the key prompts, and the mistakes the agent made and how they were caught.
+
+**Bonus:** [bonus/](bonus/README.md) has a generator that turns a plain-text test case into a runnable Playwright spec (headless `claude -p` + this repo's Page Objects), with 3 examples: input, generated output, check results and manual fixes.

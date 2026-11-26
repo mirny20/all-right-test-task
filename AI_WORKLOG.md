@@ -156,3 +156,24 @@ Every mistake, logged as it happened (CLAUDE.md "Mistake logging" rule). Unedite
 - How it was caught: user review of the README.
 - Fix: rewrote the section as test areas left out, each with a technical or ethical reason (cross-browser cost vs. value, no load or security testing against shared public services, unstable visual baselines on a third-party site, accessibility findings nobody can act on, live backends instead of mocks). Also dropped the "documented API behaviour" section and the dates, and split the bug reports by product.
 - Prevention rule: "Left out, and why" needs a reason that would still hold if the brief didn't exist. "The task didn't ask for it" is not a reason.
+
+### Generator prompt said "already logged in" while one example is a login case
+
+- What I did wrong: The `bonus/generate.ts` prompt opened with "run in a Playwright project that is already logged in as standard_user", but the `login-empty-password` example needs a logged-out user. The way out (`guestTest`, which empties `storageState`) was only a side note further down, in the list of files to read, so the prompt contradicted itself.
+- How it was caught: user review of the prompt before the first run.
+- Fix: the prompt now has a "Session" section that gives both cases together: `test` for logged-in cases (no second login), `guestTest as test` for logged-out ones.
+- Prevention rule: A generator prompt must not state a default as a fact when some inputs need the opposite. Put each option and when to use it in the same place.
+
+### Config and generated code edited without running Prettier
+
+- What I did wrong: I added `bonus/**/*.ts` to `tsconfig.json` with a Python string replace, and the line went past Prettier's width. The first version of the generator also saved the model's code without formatting it (the sort spec had a chain Prettier wraps differently).
+- How it was caught: `npm run format:check` before proposing the commit (tsconfig), and the diff between the raw and the Prettier-formatted spec (generator).
+- Fix: formatted `tsconfig.json`; `generate.ts` now runs `prettier --write` on every spec it writes.
+- Prevention rule: After a scripted edit (sed/python) of any file, run `npm run format:check` (CI runs it), not only tsc and lint.
+
+### Bonus README was too detailed
+
+- What I did wrong: `bonus/README.md` walked through each example step by step (inputs pasted in full, what the agent did, diffs of the fixes, Prettier notes, cost and budget details, a limits section). The user wanted a short feature page.
+- How it was caught: user review of the README.
+- Fix: cut it down to a description, usage, and one table of examples (input, output, passed, what was fixed). The details stay in the linked files and in PLAN.md.
+- Prevention rule: A README in a subfolder covers what the feature is, how to use it, and a short summary of results. Process details go in PLAN.md or AI_WORKLOG.md.

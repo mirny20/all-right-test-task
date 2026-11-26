@@ -18,5 +18,11 @@
     "paths": { "@src/*": ["./src/*"] },
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "playwright.config.ts", "eslint.config.mjs"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "bonus/**/*.ts",
+    "playwright.config.ts",
+    "eslint.config.mjs"
+  ]
 }

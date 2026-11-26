@@ -1,0 +1,12 @@
+### tsc: PASS
+no errors in this spec
+
+### eslint: PASS
+
+
+### playwright: PASS
+Running 2 tests using 1 worker
+
+[1/2] [setup] › tests/ui/auth.setup.ts:6:1 › authenticate as standard_user
+[2/2] [bonus] › bonus/generated/cart-remove.spec.ts:7:3 › cart remove › should remove an item on the cart page and update the badge @ui
+  2 passed (2.0s)

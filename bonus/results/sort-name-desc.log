@@ -1,0 +1,12 @@
+### tsc: PASS
+no errors in this spec
+
+### eslint: PASS
+
+
+### playwright: PASS
+Running 2 tests using 1 worker
+
+[1/2] [setup] › tests/ui/auth.setup.ts:6:1 › authenticate as standard_user
+[2/2] [bonus] › bonus/generated/sort-name-desc.spec.ts:12:3 › sort name Z to A › should sort products by name Z to A and show the correct first item @ui
+  2 passed (1.9s)

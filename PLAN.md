@@ -16,11 +16,11 @@
 - [x] **Phase 5 — Docs**
   - [x] 5.0 Trim the suite to the TASK.md numbers: 12 tests (UI 5 core + 3 negative, API 1 flow + 3 negative). Smoke specs removed.
   - [x] 5.1 README (run, coverage, left out, bug reports) and curate AI_WORKLOG.md
-- [ ] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples
+- [x] **Phase 6 — Bonus**: text test case → Playwright spec generator + 3 documented examples (all 3 passed tsc/eslint/Playwright on the first generation; 2 needed review cleanups)
 
 ## Next step
 
-Phase 6 (Bonus): decide headless `claude -p` vs an `@anthropic-ai/sdk` script (see Open questions), then build the text test case → Playwright spec generator in `bonus/`, with 2–3 documented examples (input, generated output, pass/fail, manual fixes). Propose the approach first.
+All phases are done. Optional: final review of the repo as a reviewer would see it (README links, CI green on the last push), and delete the unused `SAUCE_LOCKED_USERNAME` GitHub Variable.
 
 ## API findings (2.1, verified with curl against the live API)
 
@@ -97,6 +97,11 @@ Docs = `/apidoc/api_data.js`. Error responses are **`text/plain`**, not JSON (bo
 
 - Phase 5.1 revision (user review): removed the paraphrased review prompts and the "commit after push" mistake from AI_WORKLOG.md (4 curated mistakes remain). Removed the "documented API behaviour" section from the README, rewrote "left out" with real reasons, and split the bug reports into saucedemo.com and restful-booker. Dates were removed from README, AI_WORKLOG.md and PLAN.md, and from the CLAUDE.md mistake-log template.
 
+- Phase 6: the generator is `bonus/generate.ts`, run with `npx tsx` (`tsx` was added as a dev dependency). It uses headless `claude -p`, not `@anthropic-ai/sdk`: no API key is needed (`ANTHROPIC_API_KEY` is not set, so the CLI uses the user's Claude Code login and limits), and the agent can read the real POM. The agent gets the tools `Read,Glob,Grep`, `--strict-mcp-config`, `--no-session-persistence`, and `--max-budget-usd 2` (a safety stop on the estimated cost, not a price). Each output is formatted with Prettier, then checked with tsc (only the spec's own errors), eslint and Playwright. Check logs go to `bonus/results/`.
+- Phase 6: the `bonus` Playwright project only exists when `BONUS=1` is set, so the main suite and CI do not run generated specs (as the user chose). Generated specs and logs are committed as evidence. tsconfig and eslint now include `bonus/`.
+- Phase 6: `claude -p` refuses to run inside a Claude Code session (`CLAUDECODE`). The check was not bypassed: the user ran the generator from a normal terminal.
+- Phase 6 results: cart-remove, sort-name-desc and login-empty-password all passed on the first generation. Review fixes: the sort spec had a hardcoded product name (now `products.redTShirt.name`), and the login spec had the error text inline with a TODO (now `loginErrors.passwordRequired`, verified live). The raw output was not Prettier-clean, so the generator now runs Prettier. After the fixes: `4 passed`.
+
 ## Bugs found (candidates → confirmed)
 
 API (confirmed, see the findings table). Since 5.0 only BUG-01 and BUG-02 are pinned with `test.fail()` in `tests/api/booking.negative.spec.ts`; BUG-03/04/05 are manual repro only:
@@ -117,5 +122,5 @@ UI (confirmed live with Playwright MCP). Since 5.0 only BUG-06 is pinned (`tests
 
 ## Open questions
 
-- Bonus generator: headless `claude -p` vs `@anthropic-ai/sdk` script. Decide in Phase 6.
+- ~~Bonus generator: headless `claude -p` vs `@anthropic-ai/sdk`?~~ `claude -p` (Phase 6).
 - ~~Use `locked_out_user`?~~ Was yes in 3.1; the test and `SAUCE_LOCKED_USERNAME` were removed in 5.0 (scope trim). Delete the GitHub Variable.
